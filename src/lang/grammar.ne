@@ -2,15 +2,13 @@
 @include "./primitives/string.ne"
 @include "./primitives/operators.ne"
 
-#all end user rules must start with @ and end with ;
+# label 'FL_<floor{2}>' : floor --set '<floor>';
 Rule -> Input:+ " : " command ";" {%
     ([input, _b, output, _c]) => ({
         input,
         output
     })
 %}
-
-#label '*_FL
 
 Input -> 
     keyExp:+ " ":? expression:? {%
