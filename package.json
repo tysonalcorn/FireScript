@@ -1,0 +1,11 @@
+{
+  "name": "FireScript",
+  "version": "1.0.0",
+  "main": "index.js",
+  "author": "Tyson Alcorn <tyson.alcorn@outlook.com>",
+  "license": "MIT",
+  "private": false,
+  "dependencies": {
+    "moo": "^0.5.2"
+  }
+}
