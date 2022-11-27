@@ -14,24 +14,23 @@ Input ->
     keyExp:+ " ":? expression:? {%
         ([keyExps, _a, exps]) => ({
             fn: (obj) => {
-                let vars = [];
+                let vars = {};
                 let match = true;
-                let res = true;
                 keyExps.forEach(exp => {
                     const {variables, result} = exp.fn(obj);
+                    //console.log(result);
                     if(!JSON.parse(result)) match = false;
-                    if(variables.length) {
-                        vars.push(variables);
-                        vars.flat();
+                    if(variables) {
+                        vars = {...vars, ...variables}
                     };
                 });
-                if(match) {
+                if(match && exps) {
                     exps.forEach(exp => {
                         const {result} = exp.fn(obj, vars);
-                        if(!JSON.parse(result)) res = false;
+                        if(!JSON.parse(result)) match = false;
                     })
                 };
-                return {result: res}
+                return {result: match, variables: vars}
             }
         })
     %}

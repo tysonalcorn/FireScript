@@ -26,11 +26,13 @@ expression -> (logicExp|compareExp) {%
 
 command -> 
     keyoperand " --" [a-zA-Z]:+ " " (math|templatestring) {%
-        ([key, _a, com, _b, value]) => ({
-            fn: (obj, variables) => ({result: value.fn(obj, variables)}),
-            key: key.value,
-            command: com.join("")
-        })
+        ([key, _a, com, _b, value]) => {
+            return {
+                fn: (obj, variables) => ({result: value[0].fn(obj, variables)}),
+                key: key.value,
+                command: com.join("")
+            }
+        }
     %}
     | keyoperand " --" [a-zA-Z]:+ " " (sqstring|int) {%
         ([key, _a, com, _b, value]) => ({
@@ -73,16 +75,17 @@ keyExp ->
             leftOperand: {key: 'key', value: key},
             rightOperand: {key: 'regex', value: matchStr.result},
             fn: function (obj) {
-                const match = obj[key].match(regex);
+                const match = typeof obj[key] === 'string' ? obj[key].match(regex) : null;
                 return {
                     result: match ? true : false,
-                    variables: match?.groups
+                    variables: match?.groups ? {...match.groups} : {}
                 }
             }
         }
     }
     %}
 key -> [a-zA-Z]:+ {%([d]) => d.join("")%}
+    | key [0-9]:+ {%([str, int]) => str + int.join("")%}
 
 boolean -> "true"{%id%}|"false"{%id%}
 compareExp ->
@@ -202,7 +205,7 @@ matchop ->
     | variableInit {% 
         ([d]) => ({
         original: d.fullStr,
-        replace: `(?<${d.varName}>[a-zA-Z0-9]{${d.minWidth},${d.maxWidth}}`,
+        replace: `(?<${d.varName}>[a-zA-Z0-9]{${d.minWidth},${d.maxWidth}})`,
         varName: d.varName
         })
     %}
@@ -219,15 +222,13 @@ intoperand -> int {%([d]) => ({type: 'int', value: d})%}
 keyoperand -> [^'"\\-]:+ {%([d]) => ({type: 'key', value: d.join("")})%}
 
 variable -> "<" [a-zA-Z0-9]:+ ">" {%([_a, d, _b]) => d.join("")%}
-variableInit -> "<" [a-zA-Z0-9]:+ ("{" int ("," int):? "}") ">" {%
-    ([_a, varName, width, _b]) => {
-        const [_c, leftWidth, _d, rightWidthGrp, _e] = width;
-        const [_f, rightWidth] = rightWidthGrp;
+variableInit -> "<" [a-zA-Z0-9]:+ "{" int "," int "}" ">" {%
+    ([_a, varName, _b, leftWidth, _c, rightWidth, _d, _e]) => {
         return {
             varName: varName.join(""),
             minWidth: rightWidth ? leftWidth : 1,
             maxWidth: rightWidth || leftWidth,
-            fullStr: [_a, varName, width, _b].join("")
+            fullStr: [_a, varName, _b, leftWidth, _c, rightWidth, _d, _e].join("")
         };
     }
 %}

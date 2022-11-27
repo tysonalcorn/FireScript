@@ -1,7 +1,7 @@
 @builtin "number.ne"
 
 math -> sum {%
-    ([sum]) => ({result: sum.fn(obj, variables).result})
+    ([sum]) => ({fn: (obj, variables) => sum.fn(obj, variables).result})
 %}
 sum -> 
     sum "+" product {%

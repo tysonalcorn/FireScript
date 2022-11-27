@@ -6,6 +6,7 @@
   "license": "MIT",
   "private": false,
   "dependencies": {
-    "moo": "^0.5.2"
+    "moo": "^0.5.2",
+    "nearley": "^2.20.1"
   }
 }

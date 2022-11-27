@@ -131,7 +131,7 @@ var grammar = {
         }
         },
     {"name": "math", "symbols": ["sum"], "postprocess": 
-        ([sum]) => ({result: sum.fn(obj, variables).result})
+        ([sum]) => ({fn: (obj, variables) => sum.fn(obj, variables).result})
         },
     {"name": "sum", "symbols": ["sum", {"literal":"+"}, "product"], "postprocess": 
         ([sum, _a, product]) => ({fn: (obj, variables) => ({result: sum.fn(obj, variables).result + product.fn(obj, variables).result})})
@@ -175,19 +175,15 @@ var grammar = {
             },
     {"name": "matchstring$ebnf$1$subexpression$1$ebnf$1", "symbols": []},
     {"name": "matchstring$ebnf$1$subexpression$1$ebnf$1", "symbols": ["matchstring$ebnf$1$subexpression$1$ebnf$1", "sstrchar"], "postprocess": function arrpush(d) {return d[0].concat([d[1]]);}},
-    {"name": "matchstring$ebnf$1$subexpression$1$ebnf$2", "symbols": ["matchop"]},
-    {"name": "matchstring$ebnf$1$subexpression$1$ebnf$2", "symbols": ["matchstring$ebnf$1$subexpression$1$ebnf$2", "matchop"], "postprocess": function arrpush(d) {return d[0].concat([d[1]]);}},
-    {"name": "matchstring$ebnf$1$subexpression$1$ebnf$3", "symbols": []},
-    {"name": "matchstring$ebnf$1$subexpression$1$ebnf$3", "symbols": ["matchstring$ebnf$1$subexpression$1$ebnf$3", "sstrchar"], "postprocess": function arrpush(d) {return d[0].concat([d[1]]);}},
-    {"name": "matchstring$ebnf$1$subexpression$1", "symbols": ["matchstring$ebnf$1$subexpression$1$ebnf$1", "matchstring$ebnf$1$subexpression$1$ebnf$2", "matchstring$ebnf$1$subexpression$1$ebnf$3"]},
+    {"name": "matchstring$ebnf$1$subexpression$1$ebnf$2", "symbols": []},
+    {"name": "matchstring$ebnf$1$subexpression$1$ebnf$2", "symbols": ["matchstring$ebnf$1$subexpression$1$ebnf$2", "sstrchar"], "postprocess": function arrpush(d) {return d[0].concat([d[1]]);}},
+    {"name": "matchstring$ebnf$1$subexpression$1", "symbols": ["matchstring$ebnf$1$subexpression$1$ebnf$1", "matchop", "matchstring$ebnf$1$subexpression$1$ebnf$2"]},
     {"name": "matchstring$ebnf$1", "symbols": ["matchstring$ebnf$1$subexpression$1"]},
     {"name": "matchstring$ebnf$1$subexpression$2$ebnf$1", "symbols": []},
     {"name": "matchstring$ebnf$1$subexpression$2$ebnf$1", "symbols": ["matchstring$ebnf$1$subexpression$2$ebnf$1", "sstrchar"], "postprocess": function arrpush(d) {return d[0].concat([d[1]]);}},
-    {"name": "matchstring$ebnf$1$subexpression$2$ebnf$2", "symbols": ["matchop"]},
-    {"name": "matchstring$ebnf$1$subexpression$2$ebnf$2", "symbols": ["matchstring$ebnf$1$subexpression$2$ebnf$2", "matchop"], "postprocess": function arrpush(d) {return d[0].concat([d[1]]);}},
-    {"name": "matchstring$ebnf$1$subexpression$2$ebnf$3", "symbols": []},
-    {"name": "matchstring$ebnf$1$subexpression$2$ebnf$3", "symbols": ["matchstring$ebnf$1$subexpression$2$ebnf$3", "sstrchar"], "postprocess": function arrpush(d) {return d[0].concat([d[1]]);}},
-    {"name": "matchstring$ebnf$1$subexpression$2", "symbols": ["matchstring$ebnf$1$subexpression$2$ebnf$1", "matchstring$ebnf$1$subexpression$2$ebnf$2", "matchstring$ebnf$1$subexpression$2$ebnf$3"]},
+    {"name": "matchstring$ebnf$1$subexpression$2$ebnf$2", "symbols": []},
+    {"name": "matchstring$ebnf$1$subexpression$2$ebnf$2", "symbols": ["matchstring$ebnf$1$subexpression$2$ebnf$2", "sstrchar"], "postprocess": function arrpush(d) {return d[0].concat([d[1]]);}},
+    {"name": "matchstring$ebnf$1$subexpression$2", "symbols": ["matchstring$ebnf$1$subexpression$2$ebnf$1", "matchop", "matchstring$ebnf$1$subexpression$2$ebnf$2"]},
     {"name": "matchstring$ebnf$1", "symbols": ["matchstring$ebnf$1", "matchstring$ebnf$1$subexpression$2"], "postprocess": function arrpush(d) {return d[0].concat([d[1]]);}},
     {"name": "matchstring", "symbols": [{"literal":"'"}, "matchstring$ebnf$1", {"literal":"'"}], "postprocess": 
         ([_a, d, _b]) => {
@@ -196,10 +192,9 @@ var grammar = {
         
             for(let i = 0; i < d.length; i++) {
                 const [aStrArr, matchOp, bStrArr] = d[i]
-                const aStr = Array.isArray(aStrArr) ? aStrArr.join("") : '';
-                const bStr = Array.isArray(bStrArr) ? bStrArr.join("") : '';
-        
-                matchStr.concat(aStr, matchOp.replace, bStr);
+                const aStr = Array.isArray(aStrArr) && aStrArr.length ? aStrArr.join("") : '';
+                const bStr = Array.isArray(bStrArr) && bStrArr.length ? bStrArr.join("") : '';
+                matchStr = matchStr + aStr + matchOp.replace + bStr;
                 if(matchOp.varName) varNames.push(matchOp.varName);
             }
             return {result: matchStr, varNames};
@@ -225,17 +220,14 @@ var grammar = {
         ([_a, d, _b]) => {
             return {
             fn: (obj, vars) => {
-                
+        
                 let str = ''
-        
                 for(let i = 0; i < d.length; i++) {
-                    const [aStrArr, variable, bStrArr] = d[i]
-                    const aStr = Array.isArray(aStrArr) ? aStrArr.join("") : '';
-                    const bStr = Array.isArray(bStrArr) ? bStrArr.join("") : '';
-                    const varName = variable.substring(1, variable.length - 1);
-        
-                    str.concat(aStr, varName, bStr);
-                }
+                const [aStrArr, variable, bStrArr] = d[i]
+                const aStr = Array.isArray(aStrArr) && aStrArr.length ? aStrArr.join("") : '';
+                const bStr = Array.isArray(bStrArr) && bStrArr.length ? bStrArr.join("") : '';
+                str = str + vars[variable[0]] + bStr;
+            }
                 return {result: str};
             }
         }
@@ -252,11 +244,13 @@ var grammar = {
     {"name": "command$subexpression$1", "symbols": ["math"]},
     {"name": "command$subexpression$1", "symbols": ["templatestring"]},
     {"name": "command", "symbols": ["keyoperand", "command$string$1", "command$ebnf$1", {"literal":" "}, "command$subexpression$1"], "postprocess": 
-        ([key, _a, com, _b, value]) => ({
-            fn: (obj, variables) => ({result: value.fn(obj, variables)}),
-            key: key.value,
-            command: com.join("")
-        })
+        ([key, _a, com, _b, value]) => {
+            return {
+                fn: (obj, variables) => ({result: value[0].fn(obj, variables)}),
+                key: key.value,
+                command: com.join("")
+            }
+        }
             },
     {"name": "command$string$2", "symbols": [{"literal":" "}, {"literal":"-"}, {"literal":"-"}], "postprocess": function joiner(d) {return d.join('');}},
     {"name": "command$ebnf$2", "symbols": [/[a-zA-Z]/]},
@@ -318,10 +312,10 @@ var grammar = {
                 leftOperand: {key: 'key', value: key},
                 rightOperand: {key: 'regex', value: matchStr.result},
                 fn: function (obj) {
-                    const match = obj[key].match(regex);
+                    const match = typeof obj[key] === 'string' ? obj[key].match(regex) : null;
                     return {
                         result: match ? true : false,
-                        variables: match?.groups
+                        variables: match?.groups ? {...match.groups} : {}
                     }
                 }
             }
@@ -330,6 +324,9 @@ var grammar = {
     {"name": "key$ebnf$1", "symbols": [/[a-zA-Z]/]},
     {"name": "key$ebnf$1", "symbols": ["key$ebnf$1", /[a-zA-Z]/], "postprocess": function arrpush(d) {return d[0].concat([d[1]]);}},
     {"name": "key", "symbols": ["key$ebnf$1"], "postprocess": ([d]) => d.join("")},
+    {"name": "key$ebnf$2", "symbols": [/[0-9]/]},
+    {"name": "key$ebnf$2", "symbols": ["key$ebnf$2", /[0-9]/], "postprocess": function arrpush(d) {return d[0].concat([d[1]]);}},
+    {"name": "key", "symbols": ["key", "key$ebnf$2"], "postprocess": ([str, int]) => str + int.join("")},
     {"name": "boolean$string$1", "symbols": [{"literal":"t"}, {"literal":"r"}, {"literal":"u"}, {"literal":"e"}], "postprocess": function joiner(d) {return d.join('');}},
     {"name": "boolean", "symbols": ["boolean$string$1"], "postprocess": id},
     {"name": "boolean$string$2", "symbols": [{"literal":"f"}, {"literal":"a"}, {"literal":"l"}, {"literal":"s"}, {"literal":"e"}], "postprocess": function joiner(d) {return d.join('');}},
@@ -472,7 +469,7 @@ var grammar = {
     {"name": "matchop", "symbols": ["variableInit"], "postprocess":  
         ([d]) => ({
         original: d.fullStr,
-        replace: `(?<${d.varName}>[a-zA-Z0-9]{${d.minWidth},${d.maxWidth}}`,
+        replace: `(?<${d.varName}>[a-zA-Z0-9]{${d.minWidth},${d.maxWidth}})`,
         varName: d.varName
         })
             },
@@ -492,19 +489,13 @@ var grammar = {
     {"name": "variable", "symbols": [{"literal":"<"}, "variable$ebnf$1", {"literal":">"}], "postprocess": ([_a, d, _b]) => d.join("")},
     {"name": "variableInit$ebnf$1", "symbols": [/[a-zA-Z0-9]/]},
     {"name": "variableInit$ebnf$1", "symbols": ["variableInit$ebnf$1", /[a-zA-Z0-9]/], "postprocess": function arrpush(d) {return d[0].concat([d[1]]);}},
-    {"name": "variableInit$subexpression$1$ebnf$1$subexpression$1", "symbols": [{"literal":","}, "int"]},
-    {"name": "variableInit$subexpression$1$ebnf$1", "symbols": ["variableInit$subexpression$1$ebnf$1$subexpression$1"], "postprocess": id},
-    {"name": "variableInit$subexpression$1$ebnf$1", "symbols": [], "postprocess": function(d) {return null;}},
-    {"name": "variableInit$subexpression$1", "symbols": [{"literal":"{"}, "int", "variableInit$subexpression$1$ebnf$1", {"literal":"}"}]},
-    {"name": "variableInit", "symbols": [{"literal":"<"}, "variableInit$ebnf$1", "variableInit$subexpression$1", {"literal":">"}], "postprocess": 
-        ([_a, varName, width, _b]) => {
-            const [_c, leftWidth, _d, rightWidthGrp, _e] = width;
-            const [_f, rightWidth] = rightWidthGrp;
+    {"name": "variableInit", "symbols": [{"literal":"<"}, "variableInit$ebnf$1", {"literal":"{"}, "int", {"literal":","}, "int", {"literal":"}"}, {"literal":">"}], "postprocess": 
+        ([_a, varName, _b, leftWidth, _c, rightWidth, _d, _e]) => {
             return {
                 varName: varName.join(""),
                 minWidth: rightWidth ? leftWidth : 1,
                 maxWidth: rightWidth || leftWidth,
-                fullStr: [_a, varName, width, _b].join("")
+                fullStr: [_a, varName, _b, leftWidth, _c, rightWidth, _d, _e].join("")
             };
         }
         },
@@ -526,24 +517,23 @@ var grammar = {
     {"name": "Input", "symbols": ["Input$ebnf$1", "Input$ebnf$2", "Input$ebnf$3"], "postprocess": 
         ([keyExps, _a, exps]) => ({
             fn: (obj) => {
-                let vars = [];
+                let vars = {};
                 let match = true;
-                let res = true;
                 keyExps.forEach(exp => {
                     const {variables, result} = exp.fn(obj);
+                    //console.log(result);
                     if(!JSON.parse(result)) match = false;
-                    if(variables.length) {
-                        vars.push(variables);
-                        vars.flat();
+                    if(variables) {
+                        vars = {...vars, ...variables}
                     };
                 });
-                if(match) {
+                if(match && exps) {
                     exps.forEach(exp => {
                         const {result} = exp.fn(obj, vars);
-                        if(!JSON.parse(result)) res = false;
+                        if(!JSON.parse(result)) match = false;
                     })
                 };
-                return {result: res}
+                return {result: match, variables: vars}
             }
         })
             }
