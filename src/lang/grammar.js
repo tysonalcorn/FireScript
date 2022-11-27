@@ -131,31 +131,37 @@ var grammar = {
         }
         },
     {"name": "math", "symbols": ["sum"], "postprocess": 
-        ([sum]) => ({fn: (obj, variables) => sum.fn(obj, variables).result})
+        ([sum]) => ({fn: (obj, variables) => ({result: sum.fn(obj, variables).result})})
         },
-    {"name": "sum", "symbols": ["sum", {"literal":"+"}, "product"], "postprocess": 
+    {"name": "sum$string$1", "symbols": [{"literal":" "}, {"literal":"+"}, {"literal":" "}], "postprocess": function joiner(d) {return d.join('');}},
+    {"name": "sum", "symbols": ["sum", "sum$string$1", "product"], "postprocess": 
         ([sum, _a, product]) => ({fn: (obj, variables) => ({result: sum.fn(obj, variables).result + product.fn(obj, variables).result})})
             },
-    {"name": "sum", "symbols": ["sum", {"literal":"-"}, "product"], "postprocess": 
+    {"name": "sum$string$2", "symbols": [{"literal":" "}, {"literal":"-"}, {"literal":" "}], "postprocess": function joiner(d) {return d.join('');}},
+    {"name": "sum", "symbols": ["sum", "sum$string$2", "product"], "postprocess": 
         ([sum, _a, product]) => ({fn: (obj, variables) => ({result: sum.fn(obj, variables).result - product.fn(obj, variables).result})})
             },
     {"name": "sum", "symbols": ["product"], "postprocess": ([product]) => ({fn: (obj, variables) => ({result: product.fn(obj, variables).result})})},
-    {"name": "product", "symbols": ["product", {"literal":"*"}, "exp"], "postprocess": 
+    {"name": "product$string$1", "symbols": [{"literal":" "}, {"literal":"*"}, {"literal":" "}], "postprocess": function joiner(d) {return d.join('');}},
+    {"name": "product", "symbols": ["product", "product$string$1", "exp"], "postprocess": 
         ([product, _a, exp]) => ({fn: (obj, variables) => ({result: product.fn(obj, variables).result * exp.fn(obj, variables).result})})
             },
-    {"name": "product", "symbols": ["product", {"literal":"/"}, "exp"], "postprocess": 
+    {"name": "product$string$2", "symbols": [{"literal":" "}, {"literal":"/"}, {"literal":" "}], "postprocess": function joiner(d) {return d.join('');}},
+    {"name": "product", "symbols": ["product", "product$string$2", "exp"], "postprocess": 
         ([product, _a, exp]) => ({fn: (obj, variables) => ({result: product.fn(obj, variables).result / exp.fn(obj, variables).result})})
             },
-    {"name": "product", "symbols": ["exp"], "postprocess": ([exp]) => ({fn: (obj, variables) => {exp.fn(obj, variables).result}})},
+    {"name": "product", "symbols": ["exp"], "postprocess": ([exp]) => ({fn: (obj, variables) => ({result: exp.fn(obj, variables).result})})},
     {"name": "exp$subexpression$1", "symbols": ["intoperand"]},
     {"name": "exp$subexpression$1", "symbols": ["varoperand"]},
-    {"name": "exp", "symbols": ["exp$subexpression$1", {"literal":"^"}, "exp"], "postprocess": 
+    {"name": "exp$string$1", "symbols": [{"literal":" "}, {"literal":"^"}, {"literal":" "}], "postprocess": function joiner(d) {return d.join('');}},
+    {"name": "exp", "symbols": ["exp$subexpression$1", "exp$string$1", "exp"], "postprocess": 
         ([operand, _a, exp], reject) => ({
             fn: (obj, variables) => {
-                if(operand.type === 'variable' && !Number.isInteger(parseInt(variables[operand.value]))) {
-                    reject(`variable ${operand.value} is not a number`)
+                console.log(operand[0])
+                if(operand[0].type === 'variable' && !Number.isInteger(parseInt(variables[operand[0].value]))) {
+                    reject(`variable ${operand[0].value} is not a number`)
                 } else return {
-                    result: operand.type === 'int' ? parseInt(operand.value) ** exp.result : parseInt(variables[operand.value]) ** exp.result
+                    result: operand[0].type === 'int' ? parseInt(operand[0].value) ** exp.fn(obj, variables).result : parseInt(variables[operand[0].value]) ** exp.fn(obj, variables).result
                 }
                 }
         })
@@ -165,10 +171,11 @@ var grammar = {
     {"name": "exp", "symbols": ["exp$subexpression$2"], "postprocess": 
         ([operand, _a, exp], reject) => ({
             fn: (obj, variables) => {
-                if(operand.type === 'variable' && !Number.isInteger(parseInt(variables[operand.value]))) {
-                    reject(`variable ${operand.value} is not a number`)
+                
+                if(operand[0].type === 'variable' && !Number.isInteger(parseInt(variables[operand[0].value]))) {
+                    reject(`variable ${operand[0].value} is not a number`)
                 } else return {
-                    result: operand.type === 'int' ? parseInt(operand.value) : parseInt(variables[operand.value])
+                    result: operand[0].type === 'int' ? parseInt(operand[0].value) : parseInt(variables[operand[0].value])
                 }
                 }
         })
@@ -245,6 +252,7 @@ var grammar = {
     {"name": "command$subexpression$1", "symbols": ["templatestring"]},
     {"name": "command", "symbols": ["keyoperand", "command$string$1", "command$ebnf$1", {"literal":" "}, "command$subexpression$1"], "postprocess": 
         ([key, _a, com, _b, value]) => {
+            console.log(value);
             return {
                 fn: (obj, variables) => ({result: value[0].fn(obj, variables)}),
                 key: key.value,

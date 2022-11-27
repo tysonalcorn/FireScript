@@ -27,6 +27,7 @@ expression -> (logicExp|compareExp) {%
 command -> 
     keyoperand " --" [a-zA-Z]:+ " " (math|templatestring) {%
         ([key, _a, com, _b, value]) => {
+            console.log(value);
             return {
                 fn: (obj, variables) => ({result: value[0].fn(obj, variables)}),
                 key: key.value,

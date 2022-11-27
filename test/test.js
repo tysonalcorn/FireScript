@@ -2,7 +2,7 @@ const nearley = require("nearley");
 const grammar = require("../src/lang/grammar");
 const {est3Array} = require("./test-data");
 
-const rules = ["message2 'FL <floor{1,2}>*' : floor --set '<floor>';"]
+const rules = ["message2 'FL <floor{1,2}>*' : floor --set <floor> + 1;"]
 
 const commands = 
     {
@@ -40,6 +40,7 @@ const main = () => {
                 //console.log(vars)
                 const {fn, key, command} = output;
                 const value = fn(obj, vars).result;
+                //console.log("value: ", value)
                 const commandResult = commands[command](obj, {value, key});
                 if(commandResult) newObj = {...newObj, ...commandResult};
             }
