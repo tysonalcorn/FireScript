@@ -37,11 +37,12 @@ command ->
     %}
     | keyoperand [\s]:* "--" [a-zA-Z]:+ [\s]:* (sqstring|int) {%
         ([key, _a, _b, com, _c, value]) => ({
-            fn: () => ({result: value}),
+            fn: () => ({result: {result: value[0]}}),
             key: key.value,
             command: com.join("")
         })
     %}
+    | "," [\s]:* command {%([_a, _b, com]) => com%}
 
 
 logicExp -> # may need to remove logicExp from the operand conditions - we'll see if it works

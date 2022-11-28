@@ -24,7 +24,6 @@ exp ->
     (intoperand|varoperand) [\s]:* "^" [\s]:* exp {%
         ([operand, _a, _b, _c, exp], reject) => ({
             fn: (obj, variables) => {
-                console.log(operand[0])
                 if(operand[0].type === 'variable' && !Number.isInteger(parseInt(variables[operand[0].value]))) {
                     reject(`variable ${operand[0].value} is not a number`)
                 } else return {

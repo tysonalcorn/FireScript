@@ -172,7 +172,6 @@ var grammar = {
     {"name": "exp", "symbols": ["exp$subexpression$1", "exp$ebnf$1", {"literal":"^"}, "exp$ebnf$2", "exp"], "postprocess": 
         ([operand, _a, _b, _c, exp], reject) => ({
             fn: (obj, variables) => {
-                console.log(operand[0])
                 if(operand[0].type === 'variable' && !Number.isInteger(parseInt(variables[operand[0].value]))) {
                     reject(`variable ${operand[0].value} is not a number`)
                 } else return {
@@ -290,11 +289,14 @@ var grammar = {
     {"name": "command$subexpression$2", "symbols": ["int"]},
     {"name": "command", "symbols": ["keyoperand", "command$ebnf$4", "command$string$2", "command$ebnf$5", "command$ebnf$6", "command$subexpression$2"], "postprocess": 
         ([key, _a, _b, com, _c, value]) => ({
-            fn: () => ({result: value}),
+            fn: () => ({result: {result: value[0]}}),
             key: key.value,
             command: com.join("")
         })
             },
+    {"name": "command$ebnf$7", "symbols": []},
+    {"name": "command$ebnf$7", "symbols": ["command$ebnf$7", /[\s]/], "postprocess": function arrpush(d) {return d[0].concat([d[1]]);}},
+    {"name": "command", "symbols": [{"literal":","}, "command$ebnf$7", "command"], "postprocess": ([_a, _b, com]) => com},
     {"name": "logicExp$subexpression$1", "symbols": ["keyExp"]},
     {"name": "logicExp$subexpression$1", "symbols": ["logicExp"]},
     {"name": "logicExp$subexpression$1", "symbols": ["compareExp"]},
@@ -574,7 +576,9 @@ var grammar = {
     {"name": "Rule$ebnf$2", "symbols": ["Rule$ebnf$2", /[\s]/], "postprocess": function arrpush(d) {return d[0].concat([d[1]]);}},
     {"name": "Rule$ebnf$3", "symbols": []},
     {"name": "Rule$ebnf$3", "symbols": ["Rule$ebnf$3", /[\s]/], "postprocess": function arrpush(d) {return d[0].concat([d[1]]);}},
-    {"name": "Rule", "symbols": ["Rule$ebnf$1", "Rule$ebnf$2", {"literal":":"}, "Rule$ebnf$3", "command", {"literal":";"}], "postprocess": 
+    {"name": "Rule$ebnf$4", "symbols": ["command"]},
+    {"name": "Rule$ebnf$4", "symbols": ["Rule$ebnf$4", "command"], "postprocess": function arrpush(d) {return d[0].concat([d[1]]);}},
+    {"name": "Rule", "symbols": ["Rule$ebnf$1", "Rule$ebnf$2", {"literal":":"}, "Rule$ebnf$3", "Rule$ebnf$4", {"literal":";"}], "postprocess": 
         ([input, _b, _c, _d, output, _e]) => ({
             input,
             output
@@ -597,7 +601,6 @@ var grammar = {
                 let match = true;
                 keyExps.forEach(exp => {
                     const {variables, result} = exp[0].fn(obj);
-                    //console.log(result);
                     if(!JSON.parse(result)) match = false;
                     if(variables) {
                         vars = {...vars, ...variables}
@@ -606,7 +609,6 @@ var grammar = {
                 if(match && exps) {
                     exps.forEach(exp => {
                         const {result} = exp.fn(obj, vars);
-                        console.log('result: ', result)
                         if(!JSON.parse(result)) match = false;
                     })
                 };

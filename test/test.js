@@ -2,7 +2,7 @@ const nearley = require("nearley");
 const grammar = require("../src/lang/grammar");
 const {est3Array} = require("./test-data");
 
-const rules = ["message2 'FL <floor{1,2}>*' model 'SD' <floor> = 5 : floor --set '<floor>';"]
+const rules = ["message2 'FL <floor{1,2}>*' model 'SD' <floor> = 5 : floor --set '<floor>', test --set 'true';"]
 
 const commands = 
     {
@@ -36,13 +36,15 @@ const main = () => {
                     output = res.output
                 }
             })
-            if(satisfied && output && output.command) {
+            if(satisfied && Array.isArray(output)) {
                 //console.log(vars)
-                const {fn, key, command} = output;
-                const value = fn(obj, vars).result;
-                //console.log("value: ", value)
-                const commandResult = commands[command](obj, {value, key});
-                if(commandResult) newObj = {...newObj, ...commandResult};
+                output.forEach(out => {
+                    const {fn, key, command} = out;
+                    const value = fn(obj, vars).result;
+                    console.log("value: ", out)
+                    const commandResult = commands[command](obj, {value, key});
+                    if(commandResult) newObj = {...newObj, ...commandResult};
+                })
             }
         })
         if(newObj) data.push(newObj);
