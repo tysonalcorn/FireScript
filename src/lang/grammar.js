@@ -120,7 +120,7 @@ var grammar = {
             return JSON.parse("\""+d.join("")+"\"");
         }
         },
-    {"name": "sstrchar", "symbols": [/[^\\'\n*<>]/], "postprocess": id},
+    {"name": "sstrchar", "symbols": [/[^\\'\n*<>\\:]/], "postprocess": id},
     {"name": "sstrchar", "symbols": [{"literal":"\\"}, "strescape"], "postprocess": function(d) { return JSON.parse("\""+d.join("")+"\""); }},
     {"name": "sstrchar$string$1", "symbols": [{"literal":"\\"}, {"literal":"'"}], "postprocess": function joiner(d) {return d.join('');}},
     {"name": "sstrchar", "symbols": ["sstrchar$string$1"], "postprocess": function(d) {return "'"; }},
@@ -133,29 +133,44 @@ var grammar = {
     {"name": "math", "symbols": ["sum"], "postprocess": 
         ([sum]) => ({fn: (obj, variables) => ({result: sum.fn(obj, variables).result})})
         },
-    {"name": "sum$string$1", "symbols": [{"literal":" "}, {"literal":"+"}, {"literal":" "}], "postprocess": function joiner(d) {return d.join('');}},
-    {"name": "sum", "symbols": ["sum", "sum$string$1", "product"], "postprocess": 
-        ([sum, _a, product]) => ({fn: (obj, variables) => ({result: sum.fn(obj, variables).result + product.fn(obj, variables).result})})
+    {"name": "sum$ebnf$1", "symbols": []},
+    {"name": "sum$ebnf$1", "symbols": ["sum$ebnf$1", /[\s]/], "postprocess": function arrpush(d) {return d[0].concat([d[1]]);}},
+    {"name": "sum$ebnf$2", "symbols": []},
+    {"name": "sum$ebnf$2", "symbols": ["sum$ebnf$2", /[\s]/], "postprocess": function arrpush(d) {return d[0].concat([d[1]]);}},
+    {"name": "sum", "symbols": ["sum", "sum$ebnf$1", {"literal":"+"}, "sum$ebnf$2", "product"], "postprocess": 
+        ([sum, _a, _b, _c, product]) => ({fn: (obj, variables) => ({result: sum.fn(obj, variables).result + product.fn(obj, variables).result})})
             },
-    {"name": "sum$string$2", "symbols": [{"literal":" "}, {"literal":"-"}, {"literal":" "}], "postprocess": function joiner(d) {return d.join('');}},
-    {"name": "sum", "symbols": ["sum", "sum$string$2", "product"], "postprocess": 
-        ([sum, _a, product]) => ({fn: (obj, variables) => ({result: sum.fn(obj, variables).result - product.fn(obj, variables).result})})
+    {"name": "sum$ebnf$3", "symbols": []},
+    {"name": "sum$ebnf$3", "symbols": ["sum$ebnf$3", /[\s]/], "postprocess": function arrpush(d) {return d[0].concat([d[1]]);}},
+    {"name": "sum$ebnf$4", "symbols": []},
+    {"name": "sum$ebnf$4", "symbols": ["sum$ebnf$4", /[\s]/], "postprocess": function arrpush(d) {return d[0].concat([d[1]]);}},
+    {"name": "sum", "symbols": ["sum", "sum$ebnf$3", {"literal":"-"}, "sum$ebnf$4", "product"], "postprocess": 
+        ([sum, _a, _b, _c, product]) => ({fn: (obj, variables) => ({result: sum.fn(obj, variables).result - product.fn(obj, variables).result})})
             },
     {"name": "sum", "symbols": ["product"], "postprocess": ([product]) => ({fn: (obj, variables) => ({result: product.fn(obj, variables).result})})},
-    {"name": "product$string$1", "symbols": [{"literal":" "}, {"literal":"*"}, {"literal":" "}], "postprocess": function joiner(d) {return d.join('');}},
-    {"name": "product", "symbols": ["product", "product$string$1", "exp"], "postprocess": 
-        ([product, _a, exp]) => ({fn: (obj, variables) => ({result: product.fn(obj, variables).result * exp.fn(obj, variables).result})})
+    {"name": "product$ebnf$1", "symbols": []},
+    {"name": "product$ebnf$1", "symbols": ["product$ebnf$1", /[\s]/], "postprocess": function arrpush(d) {return d[0].concat([d[1]]);}},
+    {"name": "product$ebnf$2", "symbols": []},
+    {"name": "product$ebnf$2", "symbols": ["product$ebnf$2", /[\s]/], "postprocess": function arrpush(d) {return d[0].concat([d[1]]);}},
+    {"name": "product", "symbols": ["product", "product$ebnf$1", {"literal":"*"}, "product$ebnf$2", "exp"], "postprocess": 
+        ([product, _a, _b, _c, exp]) => ({fn: (obj, variables) => ({result: product.fn(obj, variables).result * exp.fn(obj, variables).result})})
             },
-    {"name": "product$string$2", "symbols": [{"literal":" "}, {"literal":"/"}, {"literal":" "}], "postprocess": function joiner(d) {return d.join('');}},
-    {"name": "product", "symbols": ["product", "product$string$2", "exp"], "postprocess": 
-        ([product, _a, exp]) => ({fn: (obj, variables) => ({result: product.fn(obj, variables).result / exp.fn(obj, variables).result})})
+    {"name": "product$ebnf$3", "symbols": []},
+    {"name": "product$ebnf$3", "symbols": ["product$ebnf$3", /[\s]/], "postprocess": function arrpush(d) {return d[0].concat([d[1]]);}},
+    {"name": "product$ebnf$4", "symbols": []},
+    {"name": "product$ebnf$4", "symbols": ["product$ebnf$4", /[\s]/], "postprocess": function arrpush(d) {return d[0].concat([d[1]]);}},
+    {"name": "product", "symbols": ["product", "product$ebnf$3", {"literal":"/"}, "product$ebnf$4", "exp"], "postprocess": 
+        ([product, _a, _b, _c, exp]) => ({fn: (obj, variables) => ({result: product.fn(obj, variables).result / exp.fn(obj, variables).result})})
             },
     {"name": "product", "symbols": ["exp"], "postprocess": ([exp]) => ({fn: (obj, variables) => ({result: exp.fn(obj, variables).result})})},
     {"name": "exp$subexpression$1", "symbols": ["intoperand"]},
     {"name": "exp$subexpression$1", "symbols": ["varoperand"]},
-    {"name": "exp$string$1", "symbols": [{"literal":" "}, {"literal":"^"}, {"literal":" "}], "postprocess": function joiner(d) {return d.join('');}},
-    {"name": "exp", "symbols": ["exp$subexpression$1", "exp$string$1", "exp"], "postprocess": 
-        ([operand, _a, exp], reject) => ({
+    {"name": "exp$ebnf$1", "symbols": []},
+    {"name": "exp$ebnf$1", "symbols": ["exp$ebnf$1", /[\s]/], "postprocess": function arrpush(d) {return d[0].concat([d[1]]);}},
+    {"name": "exp$ebnf$2", "symbols": []},
+    {"name": "exp$ebnf$2", "symbols": ["exp$ebnf$2", /[\s]/], "postprocess": function arrpush(d) {return d[0].concat([d[1]]);}},
+    {"name": "exp", "symbols": ["exp$subexpression$1", "exp$ebnf$1", {"literal":"^"}, "exp$ebnf$2", "exp"], "postprocess": 
+        ([operand, _a, _b, _c, exp], reject) => ({
             fn: (obj, variables) => {
                 console.log(operand[0])
                 if(operand[0].type === 'variable' && !Number.isInteger(parseInt(variables[operand[0].value]))) {
@@ -243,15 +258,19 @@ var grammar = {
     {"name": "expression$subexpression$1", "symbols": ["logicExp"]},
     {"name": "expression$subexpression$1", "symbols": ["compareExp"]},
     {"name": "expression", "symbols": ["expression$subexpression$1"], "postprocess": 
-        ([d]) => ({fn: d.fn(obj, variables)})
+        ([d]) => ({fn: (obj, variables) => d[0].fn(obj, variables)})
         },
-    {"name": "command$string$1", "symbols": [{"literal":" "}, {"literal":"-"}, {"literal":"-"}], "postprocess": function joiner(d) {return d.join('');}},
-    {"name": "command$ebnf$1", "symbols": [/[a-zA-Z]/]},
-    {"name": "command$ebnf$1", "symbols": ["command$ebnf$1", /[a-zA-Z]/], "postprocess": function arrpush(d) {return d[0].concat([d[1]]);}},
+    {"name": "command$ebnf$1", "symbols": []},
+    {"name": "command$ebnf$1", "symbols": ["command$ebnf$1", /[\s]/], "postprocess": function arrpush(d) {return d[0].concat([d[1]]);}},
+    {"name": "command$string$1", "symbols": [{"literal":"-"}, {"literal":"-"}], "postprocess": function joiner(d) {return d.join('');}},
+    {"name": "command$ebnf$2", "symbols": [/[a-zA-Z]/]},
+    {"name": "command$ebnf$2", "symbols": ["command$ebnf$2", /[a-zA-Z]/], "postprocess": function arrpush(d) {return d[0].concat([d[1]]);}},
+    {"name": "command$ebnf$3", "symbols": []},
+    {"name": "command$ebnf$3", "symbols": ["command$ebnf$3", /[\s]/], "postprocess": function arrpush(d) {return d[0].concat([d[1]]);}},
     {"name": "command$subexpression$1", "symbols": ["math"]},
     {"name": "command$subexpression$1", "symbols": ["templatestring"]},
-    {"name": "command", "symbols": ["keyoperand", "command$string$1", "command$ebnf$1", {"literal":" "}, "command$subexpression$1"], "postprocess": 
-        ([key, _a, com, _b, value]) => {
+    {"name": "command", "symbols": ["keyoperand", "command$ebnf$1", "command$string$1", "command$ebnf$2", "command$ebnf$3", "command$subexpression$1"], "postprocess": 
+        ([key, _a, _b, com, _c, value]) => {
             console.log(value);
             return {
                 fn: (obj, variables) => ({result: value[0].fn(obj, variables)}),
@@ -260,13 +279,17 @@ var grammar = {
             }
         }
             },
-    {"name": "command$string$2", "symbols": [{"literal":" "}, {"literal":"-"}, {"literal":"-"}], "postprocess": function joiner(d) {return d.join('');}},
-    {"name": "command$ebnf$2", "symbols": [/[a-zA-Z]/]},
-    {"name": "command$ebnf$2", "symbols": ["command$ebnf$2", /[a-zA-Z]/], "postprocess": function arrpush(d) {return d[0].concat([d[1]]);}},
+    {"name": "command$ebnf$4", "symbols": []},
+    {"name": "command$ebnf$4", "symbols": ["command$ebnf$4", /[\s]/], "postprocess": function arrpush(d) {return d[0].concat([d[1]]);}},
+    {"name": "command$string$2", "symbols": [{"literal":"-"}, {"literal":"-"}], "postprocess": function joiner(d) {return d.join('');}},
+    {"name": "command$ebnf$5", "symbols": [/[a-zA-Z]/]},
+    {"name": "command$ebnf$5", "symbols": ["command$ebnf$5", /[a-zA-Z]/], "postprocess": function arrpush(d) {return d[0].concat([d[1]]);}},
+    {"name": "command$ebnf$6", "symbols": []},
+    {"name": "command$ebnf$6", "symbols": ["command$ebnf$6", /[\s]/], "postprocess": function arrpush(d) {return d[0].concat([d[1]]);}},
     {"name": "command$subexpression$2", "symbols": ["sqstring"]},
     {"name": "command$subexpression$2", "symbols": ["int"]},
-    {"name": "command", "symbols": ["keyoperand", "command$string$2", "command$ebnf$2", {"literal":" "}, "command$subexpression$2"], "postprocess": 
-        ([key, _a, com, _b, value]) => ({
+    {"name": "command", "symbols": ["keyoperand", "command$ebnf$4", "command$string$2", "command$ebnf$5", "command$ebnf$6", "command$subexpression$2"], "postprocess": 
+        ([key, _a, _b, com, _c, value]) => ({
             fn: () => ({result: value}),
             key: key.value,
             command: com.join("")
@@ -276,13 +299,16 @@ var grammar = {
     {"name": "logicExp$subexpression$1", "symbols": ["logicExp"]},
     {"name": "logicExp$subexpression$1", "symbols": ["compareExp"]},
     {"name": "logicExp$subexpression$1", "symbols": ["boolean"]},
-    {"name": "logicExp$string$1", "symbols": [{"literal":" "}, {"literal":"&"}, {"literal":" "}], "postprocess": function joiner(d) {return d.join('');}},
+    {"name": "logicExp$ebnf$1", "symbols": []},
+    {"name": "logicExp$ebnf$1", "symbols": ["logicExp$ebnf$1", /[\s]/], "postprocess": function arrpush(d) {return d[0].concat([d[1]]);}},
+    {"name": "logicExp$ebnf$2", "symbols": []},
+    {"name": "logicExp$ebnf$2", "symbols": ["logicExp$ebnf$2", /[\s]/], "postprocess": function arrpush(d) {return d[0].concat([d[1]]);}},
     {"name": "logicExp$subexpression$2", "symbols": ["keyExp"]},
     {"name": "logicExp$subexpression$2", "symbols": ["logicExp"]},
     {"name": "logicExp$subexpression$2", "symbols": ["compareExp"]},
     {"name": "logicExp$subexpression$2", "symbols": ["boolean"]},
-    {"name": "logicExp", "symbols": ["logicExp$subexpression$1", "logicExp$string$1", "logicExp$subexpression$2"], "postprocess": 
-        ([leftOperand, _, rightOperand]) => ({
+    {"name": "logicExp", "symbols": ["logicExp$subexpression$1", "logicExp$ebnf$1", {"literal":"&"}, "logicExp$ebnf$2", "logicExp$subexpression$2"], "postprocess": 
+        ([leftOperand, _a, _b, _c, rightOperand]) => ({
                 fn: (obj, variables) => {
                     const left = typeof leftOperand === 'string' ? JSON.parse(leftOperand) : left.fn(obj, variables).result;
                     const right = typeof rightOperand === 'string' ? JSON.parse(rightOperand) : right.fn(obj, variables).result;
@@ -297,13 +323,16 @@ var grammar = {
     {"name": "logicExp$subexpression$3", "symbols": ["logicExp"]},
     {"name": "logicExp$subexpression$3", "symbols": ["compareExp"]},
     {"name": "logicExp$subexpression$3", "symbols": ["boolean"]},
-    {"name": "logicExp$string$2", "symbols": [{"literal":" "}, {"literal":"|"}, {"literal":" "}], "postprocess": function joiner(d) {return d.join('');}},
+    {"name": "logicExp$ebnf$3", "symbols": []},
+    {"name": "logicExp$ebnf$3", "symbols": ["logicExp$ebnf$3", /[\s]/], "postprocess": function arrpush(d) {return d[0].concat([d[1]]);}},
+    {"name": "logicExp$ebnf$4", "symbols": []},
+    {"name": "logicExp$ebnf$4", "symbols": ["logicExp$ebnf$4", /[\s]/], "postprocess": function arrpush(d) {return d[0].concat([d[1]]);}},
     {"name": "logicExp$subexpression$4", "symbols": ["keyExp"]},
     {"name": "logicExp$subexpression$4", "symbols": ["logicExp"]},
     {"name": "logicExp$subexpression$4", "symbols": ["compareExp"]},
     {"name": "logicExp$subexpression$4", "symbols": ["boolean"]},
-    {"name": "logicExp", "symbols": ["logicExp$subexpression$3", "logicExp$string$2", "logicExp$subexpression$4"], "postprocess": 
-        ([leftOperand, _, rightOperand]) => ({
+    {"name": "logicExp", "symbols": ["logicExp$subexpression$3", "logicExp$ebnf$3", {"literal":"|"}, "logicExp$ebnf$4", "logicExp$subexpression$4"], "postprocess": 
+        ([leftOperand, _a, _b, _c, rightOperand]) => ({
                 fn: (obj, variables) => {
                     const left = typeof leftOperand === 'string' ? JSON.parse(leftOperand) : left.fn(obj, variables);
                     const right = typeof rightOperand === 'string' ? JSON.parse(rightOperand) : right.fn(obj, variables);
@@ -313,7 +342,9 @@ var grammar = {
                 }
         })
             },
-    {"name": "keyExp", "symbols": ["key", {"literal":" "}, "matchstring"], "postprocess": 
+    {"name": "keyExp$ebnf$1", "symbols": []},
+    {"name": "keyExp$ebnf$1", "symbols": ["keyExp$ebnf$1", /[\s]/], "postprocess": function arrpush(d) {return d[0].concat([d[1]]);}},
+    {"name": "keyExp", "symbols": ["key", "keyExp$ebnf$1", "matchstring"], "postprocess": 
         ([key, _a, matchStr]) => {
             const regex = new RegExp(matchStr.result, 'i')
             return {
@@ -329,6 +360,23 @@ var grammar = {
             }
         }
         },
+    {"name": "keyExp$ebnf$2", "symbols": []},
+    {"name": "keyExp$ebnf$2", "symbols": ["keyExp$ebnf$2", /[\s]/], "postprocess": function arrpush(d) {return d[0].concat([d[1]]);}},
+    {"name": "keyExp", "symbols": ["key", "keyExp$ebnf$2", "sqstring"], "postprocess": 
+        ([key, _a, str]) => {
+            return {
+                leftOperand: {type: 'key', value: key},
+                rightOperand: {type: 'string', value: str},
+                fn: function (obj) {
+                    const match = typeof obj[key] === 'string' ? (obj[key] == str) : null;
+                    return {
+                        result: match ? true : false,
+                        //variables: match?.groups ? {...match.groups} : {}
+                    }
+                }
+            }
+        }
+        },
     {"name": "key$ebnf$1", "symbols": [/[a-zA-Z]/]},
     {"name": "key$ebnf$1", "symbols": ["key$ebnf$1", /[a-zA-Z]/], "postprocess": function arrpush(d) {return d[0].concat([d[1]]);}},
     {"name": "key", "symbols": ["key$ebnf$1"], "postprocess": ([d]) => d.join("")},
@@ -339,11 +387,13 @@ var grammar = {
     {"name": "boolean", "symbols": ["boolean$string$1"], "postprocess": id},
     {"name": "boolean$string$2", "symbols": [{"literal":"f"}, {"literal":"a"}, {"literal":"l"}, {"literal":"s"}, {"literal":"e"}], "postprocess": function joiner(d) {return d.join('');}},
     {"name": "boolean", "symbols": ["boolean$string$2"], "postprocess": id},
-    {"name": "compareExp$string$1", "symbols": [{"literal":" "}, {"literal":"!"}, {"literal":"="}, {"literal":" "}], "postprocess": function joiner(d) {return d.join('');}},
-    {"name": "compareExp$ebnf$1", "symbols": ["operand"]},
-    {"name": "compareExp$ebnf$1", "symbols": ["compareExp$ebnf$1", "operand"], "postprocess": function arrpush(d) {return d[0].concat([d[1]]);}},
-    {"name": "compareExp", "symbols": ["operand", "compareExp$string$1", "compareExp$ebnf$1"], "postprocess": 
-        ([leftOperand, _, rightOperand]) => ({
+    {"name": "compareExp$ebnf$1", "symbols": []},
+    {"name": "compareExp$ebnf$1", "symbols": ["compareExp$ebnf$1", /[\s]/], "postprocess": function arrpush(d) {return d[0].concat([d[1]]);}},
+    {"name": "compareExp$string$1", "symbols": [{"literal":"!"}, {"literal":"="}], "postprocess": function joiner(d) {return d.join('');}},
+    {"name": "compareExp$ebnf$2", "symbols": []},
+    {"name": "compareExp$ebnf$2", "symbols": ["compareExp$ebnf$2", /[\s]/], "postprocess": function arrpush(d) {return d[0].concat([d[1]]);}},
+    {"name": "compareExp", "symbols": ["operand", "compareExp$ebnf$1", "compareExp$string$1", "compareExp$ebnf$2", "operand"], "postprocess": 
+        ([leftOperand, _a, _b, _c, rightOperand]) => ({
             leftOperand,
             rightOperand,
             fn: (obj, variables) => {
@@ -356,27 +406,30 @@ var grammar = {
             }
         })
             },
-    {"name": "compareExp$string$2", "symbols": [{"literal":" "}, {"literal":"="}, {"literal":" "}], "postprocess": function joiner(d) {return d.join('');}},
-    {"name": "compareExp$ebnf$2", "symbols": ["operand"]},
-    {"name": "compareExp$ebnf$2", "symbols": ["compareExp$ebnf$2", "operand"], "postprocess": function arrpush(d) {return d[0].concat([d[1]]);}},
-    {"name": "compareExp", "symbols": ["operand", "compareExp$string$2", "compareExp$ebnf$2"], "postprocess": 
-        ([leftOperand, _, rightOperand]) => ({
+    {"name": "compareExp$ebnf$3", "symbols": []},
+    {"name": "compareExp$ebnf$3", "symbols": ["compareExp$ebnf$3", /[\s]/], "postprocess": function arrpush(d) {return d[0].concat([d[1]]);}},
+    {"name": "compareExp$ebnf$4", "symbols": []},
+    {"name": "compareExp$ebnf$4", "symbols": ["compareExp$ebnf$4", /[\s]/], "postprocess": function arrpush(d) {return d[0].concat([d[1]]);}},
+    {"name": "compareExp", "symbols": ["operand", "compareExp$ebnf$3", {"literal":"="}, "compareExp$ebnf$4", "operand"], "postprocess": 
+        ([leftOperand, _a, _b, _c, rightOperand]) => ({
             leftOperand,
             rightOperand,
             fn: (obj, variables) => {
                 const a = setOperand(leftOperand, obj, variables);
                 const b = setOperand(rightOperand, obj, variables);
                 return {
-                    result: a === b
+                    result: a == b
                 }
             }
         })
             },
-    {"name": "compareExp$string$3", "symbols": [{"literal":" "}, {"literal":"<"}, {"literal":"="}, {"literal":" "}], "postprocess": function joiner(d) {return d.join('');}},
-    {"name": "compareExp$ebnf$3", "symbols": ["operand"]},
-    {"name": "compareExp$ebnf$3", "symbols": ["compareExp$ebnf$3", "operand"], "postprocess": function arrpush(d) {return d[0].concat([d[1]]);}},
-    {"name": "compareExp", "symbols": ["operand", "compareExp$string$3", "compareExp$ebnf$3"], "postprocess": 
-        ([leftOperand, _, rightOperand]) => ({
+    {"name": "compareExp$ebnf$5", "symbols": []},
+    {"name": "compareExp$ebnf$5", "symbols": ["compareExp$ebnf$5", /[\s]/], "postprocess": function arrpush(d) {return d[0].concat([d[1]]);}},
+    {"name": "compareExp$string$2", "symbols": [{"literal":"<"}, {"literal":"="}], "postprocess": function joiner(d) {return d.join('');}},
+    {"name": "compareExp$ebnf$6", "symbols": []},
+    {"name": "compareExp$ebnf$6", "symbols": ["compareExp$ebnf$6", /[\s]/], "postprocess": function arrpush(d) {return d[0].concat([d[1]]);}},
+    {"name": "compareExp", "symbols": ["operand", "compareExp$ebnf$5", "compareExp$string$2", "compareExp$ebnf$6", "operand"], "postprocess": 
+        ([leftOperand, _a, _b, _c, rightOperand]) => ({
             leftOperand,
             rightOperand,
             fn: (obj, variables) => {
@@ -388,11 +441,13 @@ var grammar = {
             }
         })
             },
-    {"name": "compareExp$string$4", "symbols": [{"literal":" "}, {"literal":">"}, {"literal":"="}, {"literal":" "}], "postprocess": function joiner(d) {return d.join('');}},
-    {"name": "compareExp$ebnf$4", "symbols": ["operand"]},
-    {"name": "compareExp$ebnf$4", "symbols": ["compareExp$ebnf$4", "operand"], "postprocess": function arrpush(d) {return d[0].concat([d[1]]);}},
-    {"name": "compareExp", "symbols": ["operand", "compareExp$string$4", "compareExp$ebnf$4"], "postprocess": 
-        ([leftOperand, _, rightOperand]) => ({
+    {"name": "compareExp$ebnf$7", "symbols": []},
+    {"name": "compareExp$ebnf$7", "symbols": ["compareExp$ebnf$7", /[\s]/], "postprocess": function arrpush(d) {return d[0].concat([d[1]]);}},
+    {"name": "compareExp$string$3", "symbols": [{"literal":">"}, {"literal":"="}], "postprocess": function joiner(d) {return d.join('');}},
+    {"name": "compareExp$ebnf$8", "symbols": []},
+    {"name": "compareExp$ebnf$8", "symbols": ["compareExp$ebnf$8", /[\s]/], "postprocess": function arrpush(d) {return d[0].concat([d[1]]);}},
+    {"name": "compareExp", "symbols": ["operand", "compareExp$ebnf$7", "compareExp$string$3", "compareExp$ebnf$8", "operand"], "postprocess": 
+        ([leftOperand, _a, _b, _c, rightOperand]) => ({
             leftOperand,
             rightOperand,
             fn: (obj, variables) => {
@@ -404,11 +459,12 @@ var grammar = {
             }
         })
             },
-    {"name": "compareExp$string$5", "symbols": [{"literal":" "}, {"literal":"<"}, {"literal":" "}], "postprocess": function joiner(d) {return d.join('');}},
-    {"name": "compareExp$ebnf$5", "symbols": ["operand"]},
-    {"name": "compareExp$ebnf$5", "symbols": ["compareExp$ebnf$5", "operand"], "postprocess": function arrpush(d) {return d[0].concat([d[1]]);}},
-    {"name": "compareExp", "symbols": ["operand", "compareExp$string$5", "compareExp$ebnf$5"], "postprocess": 
-        ([leftOperand, _, rightOperand]) => ({
+    {"name": "compareExp$ebnf$9", "symbols": []},
+    {"name": "compareExp$ebnf$9", "symbols": ["compareExp$ebnf$9", /[\s]/], "postprocess": function arrpush(d) {return d[0].concat([d[1]]);}},
+    {"name": "compareExp$ebnf$10", "symbols": []},
+    {"name": "compareExp$ebnf$10", "symbols": ["compareExp$ebnf$10", /[\s]/], "postprocess": function arrpush(d) {return d[0].concat([d[1]]);}},
+    {"name": "compareExp", "symbols": ["operand", "compareExp$ebnf$9", {"literal":"<"}, "compareExp$ebnf$10", "operand"], "postprocess": 
+        ([leftOperand, _a, _b, _c, rightOperand]) => ({
             leftOperand,
             rightOperand,
             fn: (obj, variables) => {
@@ -420,11 +476,12 @@ var grammar = {
             }
         })
             },
-    {"name": "compareExp$string$6", "symbols": [{"literal":" "}, {"literal":">"}, {"literal":" "}], "postprocess": function joiner(d) {return d.join('');}},
-    {"name": "compareExp$ebnf$6", "symbols": ["operand"]},
-    {"name": "compareExp$ebnf$6", "symbols": ["compareExp$ebnf$6", "operand"], "postprocess": function arrpush(d) {return d[0].concat([d[1]]);}},
-    {"name": "compareExp", "symbols": ["operand", "compareExp$string$6", "compareExp$ebnf$6"], "postprocess": 
-        ([leftOperand, _, rightOperand]) => ({
+    {"name": "compareExp$ebnf$11", "symbols": []},
+    {"name": "compareExp$ebnf$11", "symbols": ["compareExp$ebnf$11", /[\s]/], "postprocess": function arrpush(d) {return d[0].concat([d[1]]);}},
+    {"name": "compareExp$ebnf$12", "symbols": []},
+    {"name": "compareExp$ebnf$12", "symbols": ["compareExp$ebnf$12", /[\s]/], "postprocess": function arrpush(d) {return d[0].concat([d[1]]);}},
+    {"name": "compareExp", "symbols": ["operand", "compareExp$ebnf$11", {"literal":">"}, "compareExp$ebnf$12", "operand"], "postprocess": 
+        ([leftOperand, _a, _b, _c, rightOperand]) => ({
             leftOperand,
             rightOperand,
             fn: (obj, variables) => {
@@ -436,11 +493,13 @@ var grammar = {
             }
         })
             },
-    {"name": "compareExp$string$7", "symbols": [{"literal":" "}, {"literal":"~"}, {"literal":"="}, {"literal":" "}], "postprocess": function joiner(d) {return d.join('');}},
-    {"name": "compareExp$ebnf$7", "symbols": ["operand"]},
-    {"name": "compareExp$ebnf$7", "symbols": ["compareExp$ebnf$7", "operand"], "postprocess": function arrpush(d) {return d[0].concat([d[1]]);}},
-    {"name": "compareExp", "symbols": ["operand", "compareExp$string$7", "compareExp$ebnf$7"], "postprocess":  //contains operator
-        ([leftOperand, _, rightOperand]) => ({
+    {"name": "compareExp$ebnf$13", "symbols": []},
+    {"name": "compareExp$ebnf$13", "symbols": ["compareExp$ebnf$13", /[\s]/], "postprocess": function arrpush(d) {return d[0].concat([d[1]]);}},
+    {"name": "compareExp$string$4", "symbols": [{"literal":"~"}, {"literal":"="}], "postprocess": function joiner(d) {return d.join('');}},
+    {"name": "compareExp$ebnf$14", "symbols": []},
+    {"name": "compareExp$ebnf$14", "symbols": ["compareExp$ebnf$14", /[\s]/], "postprocess": function arrpush(d) {return d[0].concat([d[1]]);}},
+    {"name": "compareExp", "symbols": ["operand", "compareExp$ebnf$13", "compareExp$string$4", "compareExp$ebnf$14", "operand"], "postprocess": 
+        ([leftOperand, _a, _b, _c, rightOperand]) => ({
             leftOperand,
             rightOperand,
             fn: (obj, variables) => {
@@ -452,11 +511,13 @@ var grammar = {
             }
         })
             },
-    {"name": "compareExp$string$8", "symbols": [{"literal":" "}, {"literal":"!"}, {"literal":"~"}, {"literal":"="}, {"literal":" "}], "postprocess": function joiner(d) {return d.join('');}},
-    {"name": "compareExp$ebnf$8", "symbols": ["operand"]},
-    {"name": "compareExp$ebnf$8", "symbols": ["compareExp$ebnf$8", "operand"], "postprocess": function arrpush(d) {return d[0].concat([d[1]]);}},
-    {"name": "compareExp", "symbols": ["operand", "compareExp$string$8", "compareExp$ebnf$8"], "postprocess":  //does not contain operator
-        ([leftOperand, _, rightOperand]) => ({
+    {"name": "compareExp$ebnf$15", "symbols": []},
+    {"name": "compareExp$ebnf$15", "symbols": ["compareExp$ebnf$15", /[\s]/], "postprocess": function arrpush(d) {return d[0].concat([d[1]]);}},
+    {"name": "compareExp$string$5", "symbols": [{"literal":"!"}, {"literal":"~"}, {"literal":"="}], "postprocess": function joiner(d) {return d.join('');}},
+    {"name": "compareExp$ebnf$16", "symbols": []},
+    {"name": "compareExp$ebnf$16", "symbols": ["compareExp$ebnf$16", /[\s]/], "postprocess": function arrpush(d) {return d[0].concat([d[1]]);}},
+    {"name": "compareExp", "symbols": ["operand", "compareExp$ebnf$15", "compareExp$string$5", "compareExp$ebnf$16", "operand"], "postprocess": 
+        ([leftOperand, _a, _b, _c, rightOperand]) => ({
             leftOperand,
             rightOperand,
             fn: (obj, variables) => {
@@ -489,8 +550,8 @@ var grammar = {
     {"name": "stroperand", "symbols": ["sqstring"], "postprocess": ([d]) => ({type: 'string', value: d})},
     {"name": "matchstroperand", "symbols": ["matchstring"], "postprocess": ([d]) => ({type: 'matchstring', value: d})},
     {"name": "intoperand", "symbols": ["int"], "postprocess": ([d]) => ({type: 'int', value: d})},
-    {"name": "keyoperand$ebnf$1", "symbols": [/[^'"\\-]/]},
-    {"name": "keyoperand$ebnf$1", "symbols": ["keyoperand$ebnf$1", /[^'"\\-]/], "postprocess": function arrpush(d) {return d[0].concat([d[1]]);}},
+    {"name": "keyoperand$ebnf$1", "symbols": [/[^'"\\-\\:\s]/]},
+    {"name": "keyoperand$ebnf$1", "symbols": ["keyoperand$ebnf$1", /[^'"\\-\\:\s]/], "postprocess": function arrpush(d) {return d[0].concat([d[1]]);}},
     {"name": "keyoperand", "symbols": ["keyoperand$ebnf$1"], "postprocess": ([d]) => ({type: 'key', value: d.join("")})},
     {"name": "variable$ebnf$1", "symbols": [/[a-zA-Z0-9]/]},
     {"name": "variable$ebnf$1", "symbols": ["variable$ebnf$1", /[a-zA-Z0-9]/], "postprocess": function arrpush(d) {return d[0].concat([d[1]]);}},
@@ -509,26 +570,33 @@ var grammar = {
         },
     {"name": "Rule$ebnf$1", "symbols": ["Input"]},
     {"name": "Rule$ebnf$1", "symbols": ["Rule$ebnf$1", "Input"], "postprocess": function arrpush(d) {return d[0].concat([d[1]]);}},
-    {"name": "Rule$string$1", "symbols": [{"literal":" "}, {"literal":":"}, {"literal":" "}], "postprocess": function joiner(d) {return d.join('');}},
-    {"name": "Rule", "symbols": ["Rule$ebnf$1", "Rule$string$1", "command", {"literal":";"}], "postprocess": 
-        ([input, _b, output, _c]) => ({
+    {"name": "Rule$ebnf$2", "symbols": []},
+    {"name": "Rule$ebnf$2", "symbols": ["Rule$ebnf$2", /[\s]/], "postprocess": function arrpush(d) {return d[0].concat([d[1]]);}},
+    {"name": "Rule$ebnf$3", "symbols": []},
+    {"name": "Rule$ebnf$3", "symbols": ["Rule$ebnf$3", /[\s]/], "postprocess": function arrpush(d) {return d[0].concat([d[1]]);}},
+    {"name": "Rule", "symbols": ["Rule$ebnf$1", "Rule$ebnf$2", {"literal":":"}, "Rule$ebnf$3", "command", {"literal":";"}], "postprocess": 
+        ([input, _b, _c, _d, output, _e]) => ({
             input,
             output
         })
         },
-    {"name": "Input$ebnf$1", "symbols": ["keyExp"]},
-    {"name": "Input$ebnf$1", "symbols": ["Input$ebnf$1", "keyExp"], "postprocess": function arrpush(d) {return d[0].concat([d[1]]);}},
-    {"name": "Input$ebnf$2", "symbols": [{"literal":" "}], "postprocess": id},
-    {"name": "Input$ebnf$2", "symbols": [], "postprocess": function(d) {return null;}},
-    {"name": "Input$ebnf$3", "symbols": ["expression"], "postprocess": id},
-    {"name": "Input$ebnf$3", "symbols": [], "postprocess": function(d) {return null;}},
-    {"name": "Input", "symbols": ["Input$ebnf$1", "Input$ebnf$2", "Input$ebnf$3"], "postprocess": 
-        ([keyExps, _a, exps]) => ({
+    {"name": "Input$ebnf$1$subexpression$1$ebnf$1", "symbols": []},
+    {"name": "Input$ebnf$1$subexpression$1$ebnf$1", "symbols": ["Input$ebnf$1$subexpression$1$ebnf$1", /[\s]/], "postprocess": function arrpush(d) {return d[0].concat([d[1]]);}},
+    {"name": "Input$ebnf$1$subexpression$1", "symbols": ["keyExp", "Input$ebnf$1$subexpression$1$ebnf$1"]},
+    {"name": "Input$ebnf$1", "symbols": ["Input$ebnf$1$subexpression$1"]},
+    {"name": "Input$ebnf$1$subexpression$2$ebnf$1", "symbols": []},
+    {"name": "Input$ebnf$1$subexpression$2$ebnf$1", "symbols": ["Input$ebnf$1$subexpression$2$ebnf$1", /[\s]/], "postprocess": function arrpush(d) {return d[0].concat([d[1]]);}},
+    {"name": "Input$ebnf$1$subexpression$2", "symbols": ["keyExp", "Input$ebnf$1$subexpression$2$ebnf$1"]},
+    {"name": "Input$ebnf$1", "symbols": ["Input$ebnf$1", "Input$ebnf$1$subexpression$2"], "postprocess": function arrpush(d) {return d[0].concat([d[1]]);}},
+    {"name": "Input$ebnf$2", "symbols": []},
+    {"name": "Input$ebnf$2", "symbols": ["Input$ebnf$2", "expression"], "postprocess": function arrpush(d) {return d[0].concat([d[1]]);}},
+    {"name": "Input", "symbols": ["Input$ebnf$1", "Input$ebnf$2"], "postprocess": 
+        ([keyExps, exps]) => ({
             fn: (obj) => {
                 let vars = {};
                 let match = true;
                 keyExps.forEach(exp => {
-                    const {variables, result} = exp.fn(obj);
+                    const {variables, result} = exp[0].fn(obj);
                     //console.log(result);
                     if(!JSON.parse(result)) match = false;
                     if(variables) {
@@ -538,6 +606,7 @@ var grammar = {
                 if(match && exps) {
                     exps.forEach(exp => {
                         const {result} = exp.fn(obj, vars);
+                        console.log('result: ', result)
                         if(!JSON.parse(result)) match = false;
                     })
                 };

@@ -21,12 +21,12 @@
 %}
 
 expression -> (logicExp|compareExp) {%
-    ([d]) => ({fn: d.fn(obj, variables)})
+    ([d]) => ({fn: (obj, variables) => d[0].fn(obj, variables)})
 %}
 
 command -> 
-    keyoperand " --" [a-zA-Z]:+ " " (math|templatestring) {%
-        ([key, _a, com, _b, value]) => {
+    keyoperand [\s]:* "--" [a-zA-Z]:+ [\s]:* (math|templatestring) {%
+        ([key, _a, _b, com, _c, value]) => {
             console.log(value);
             return {
                 fn: (obj, variables) => ({result: value[0].fn(obj, variables)}),
@@ -35,8 +35,8 @@ command ->
             }
         }
     %}
-    | keyoperand " --" [a-zA-Z]:+ " " (sqstring|int) {%
-        ([key, _a, com, _b, value]) => ({
+    | keyoperand [\s]:* "--" [a-zA-Z]:+ [\s]:* (sqstring|int) {%
+        ([key, _a, _b, com, _c, value]) => ({
             fn: () => ({result: value}),
             key: key.value,
             command: com.join("")
@@ -45,8 +45,8 @@ command ->
 
 
 logicExp -> # may need to remove logicExp from the operand conditions - we'll see if it works
-    (keyExp|logicExp|compareExp|boolean) " & " (keyExp|logicExp|compareExp|boolean) {%
-        ([leftOperand, _, rightOperand]) => ({
+    (keyExp|logicExp|compareExp|boolean) [\s]:* "&" [\s]:* (keyExp|logicExp|compareExp|boolean) {%
+        ([leftOperand, _a, _b, _c, rightOperand]) => ({
                 fn: (obj, variables) => {
                     const left = typeof leftOperand === 'string' ? JSON.parse(leftOperand) : left.fn(obj, variables).result;
                     const right = typeof rightOperand === 'string' ? JSON.parse(rightOperand) : right.fn(obj, variables).result;
@@ -57,8 +57,8 @@ logicExp -> # may need to remove logicExp from the operand conditions - we'll se
                 }
         })
     %}
-    |  (keyExp|logicExp|compareExp|boolean) " | " (keyExp|logicExp|compareExp|boolean) {%
-        ([leftOperand, _, rightOperand]) => ({
+    |  (keyExp|logicExp|compareExp|boolean) [\s]:* "|" [\s]:* (keyExp|logicExp|compareExp|boolean) {%
+        ([leftOperand, _a, _b, _c, rightOperand]) => ({
                 fn: (obj, variables) => {
                     const left = typeof leftOperand === 'string' ? JSON.parse(leftOperand) : left.fn(obj, variables);
                     const right = typeof rightOperand === 'string' ? JSON.parse(rightOperand) : right.fn(obj, variables);
@@ -69,7 +69,7 @@ logicExp -> # may need to remove logicExp from the operand conditions - we'll se
         })
     %}
 keyExp -> 
-    key " " matchstring {%
+    key [\s]:* matchstring {%
     ([key, _a, matchStr]) => {
         const regex = new RegExp(matchStr.result, 'i')
         return {
@@ -85,13 +85,28 @@ keyExp ->
         }
     }
     %}
+    | key [\s]:* sqstring {%
+    ([key, _a, str]) => {
+        return {
+            leftOperand: {type: 'key', value: key},
+            rightOperand: {type: 'string', value: str},
+            fn: function (obj) {
+                const match = typeof obj[key] === 'string' ? (obj[key] == str) : null;
+                return {
+                    result: match ? true : false,
+                    //variables: match?.groups ? {...match.groups} : {}
+                }
+            }
+        }
+    }
+    %}
 key -> [a-zA-Z]:+ {%([d]) => d.join("")%}
     | key [0-9]:+ {%([str, int]) => str + int.join("")%}
 
 boolean -> "true"{%id%}|"false"{%id%}
 compareExp ->
-    operand " != " operand:+ {%
-        ([leftOperand, _, rightOperand]) => ({
+    operand [\s]:* "!=" [\s]:* operand {%
+        ([leftOperand, _a, _b, _c, rightOperand]) => ({
             leftOperand,
             rightOperand,
             fn: (obj, variables) => {
@@ -104,21 +119,21 @@ compareExp ->
             }
         })
     %}
-    | operand " = " operand:+ {%
-        ([leftOperand, _, rightOperand]) => ({
+    | operand [\s]:* "=" [\s]:* operand {%
+        ([leftOperand, _a, _b, _c, rightOperand]) => ({
             leftOperand,
             rightOperand,
             fn: (obj, variables) => {
                 const a = setOperand(leftOperand, obj, variables);
                 const b = setOperand(rightOperand, obj, variables);
                 return {
-                    result: a === b
+                    result: a == b
                 }
             }
         })
     %}
-    | operand " <= " operand:+ {%
-        ([leftOperand, _, rightOperand]) => ({
+    | operand [\s]:* "<=" [\s]:* operand {%
+        ([leftOperand, _a, _b, _c, rightOperand]) => ({
             leftOperand,
             rightOperand,
             fn: (obj, variables) => {
@@ -130,8 +145,8 @@ compareExp ->
             }
         })
     %}
-    | operand " >= " operand:+ {%
-        ([leftOperand, _, rightOperand]) => ({
+    | operand [\s]:* ">=" [\s]:* operand {%
+        ([leftOperand, _a, _b, _c, rightOperand]) => ({
             leftOperand,
             rightOperand,
             fn: (obj, variables) => {
@@ -143,8 +158,8 @@ compareExp ->
             }
         })
     %}
-    | operand " < " operand:+ {%
-        ([leftOperand, _, rightOperand]) => ({
+    | operand [\s]:* "<" [\s]:* operand {%
+        ([leftOperand, _a, _b, _c, rightOperand]) => ({
             leftOperand,
             rightOperand,
             fn: (obj, variables) => {
@@ -156,8 +171,8 @@ compareExp ->
             }
         })
     %}
-    | operand " > " operand:+ {%
-        ([leftOperand, _, rightOperand]) => ({
+    | operand [\s]:* ">" [\s]:* operand {%
+        ([leftOperand, _a, _b, _c, rightOperand]) => ({
             leftOperand,
             rightOperand,
             fn: (obj, variables) => {
@@ -169,8 +184,8 @@ compareExp ->
             }
         })
     %}
-    | operand " ~= " operand:+ {% //contains operator
-        ([leftOperand, _, rightOperand]) => ({
+    | operand [\s]:* "~=" [\s]:* operand {%
+        ([leftOperand, _a, _b, _c, rightOperand]) => ({
             leftOperand,
             rightOperand,
             fn: (obj, variables) => {
@@ -182,8 +197,8 @@ compareExp ->
             }
         })
     %}
-    | operand " !~= " operand:+ {% //does not contain operator
-        ([leftOperand, _, rightOperand]) => ({
+    | operand [\s]:* "!~=" [\s]:* operand {%
+        ([leftOperand, _a, _b, _c, rightOperand]) => ({
             leftOperand,
             rightOperand,
             fn: (obj, variables) => {
@@ -220,7 +235,7 @@ varoperand -> variable {%([d]) => ({type: 'variable', value: d})%}
 stroperand -> sqstring {%([d]) => ({type: 'string', value: d})%}
 matchstroperand -> matchstring {%([d]) => ({type: 'matchstring', value: d})%}
 intoperand -> int {%([d]) => ({type: 'int', value: d})%}
-keyoperand -> [^'"\\-]:+ {%([d]) => ({type: 'key', value: d.join("")})%}
+keyoperand -> [^'"\\-\\:\s]:+ {%([d]) => ({type: 'key', value: d.join("")})%}
 
 variable -> "<" [a-zA-Z0-9]:+ ">" {%([_a, d, _b]) => d.join("")%}
 variableInit -> "<" [a-zA-Z0-9]:+ "{" int "," int "}" ">" {%

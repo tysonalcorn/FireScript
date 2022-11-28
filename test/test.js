@@ -2,7 +2,7 @@ const nearley = require("nearley");
 const grammar = require("../src/lang/grammar");
 const {est3Array} = require("./test-data");
 
-const rules = ["message2 'FL <floor{1,2}>*' : floor --set <floor> + 1;"]
+const rules = ["message2 'FL <floor{1,2}>*' model 'SD' <floor> = 5 : floor --set '<floor>';"]
 
 const commands = 
     {
