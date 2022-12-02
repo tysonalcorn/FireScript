@@ -4,6 +4,8 @@
 @include "./matchstring.ne"
 @include "./templatestring.ne"
 
+# TO-DO: figure out logic and stuff
+
 @{%
     const setOperand = (operand, obj, variables) => {
         switch (operand.type) {
@@ -20,12 +22,47 @@
     };
 %}
 
-expression -> (logicExp|compareExp) {%
-    ([d]) => ({fn: (obj, variables) => d[0].fn(obj, variables)})
+parlogic -> 
+    "(" [\s]:* (logic|parlogic) [\s]:* ")" {%
+        ([_a, _b, d, _c, _d]) => d[0]
+    %}
+    | logic {%id%}
+
+logic -> # may need to remove logicExp from the operand conditions - we'll see if it works
+    (parexpression) [\s]:* "&" [\s]:* (parexpression) {%
+        ([leftOperand, _a, _b, _c, rightOperand]) => ({
+                fn: (obj, variables) => {
+                    const left = typeof leftOperand === 'string' ? JSON.parse(leftOperand) : left.fn(obj, variables).result;
+                    const right = typeof rightOperand === 'string' ? JSON.parse(rightOperand) : right.fn(obj, variables).result;
+                    return {
+                        result: left && right,
+                        variables
+                    }
+                }
+        })
+    %}
+    |  (parexpression) [\s]:* "|" [\s]:* (parexpression) {%
+        ([leftOperand, _a, _b, _c, rightOperand]) => ({
+                fn: (obj, variables) => {
+                    const left = typeof leftOperand === 'string' ? JSON.parse(leftOperand) : left.fn(obj, variables);
+                    const right = typeof rightOperand === 'string' ? JSON.parse(rightOperand) : right.fn(obj, variables);
+                    return {
+                        result: left || right
+                    }
+                }
+        })
+    %}
+    | parexpression {%id%}
+
+parexpression -> [\s]:* "(" [\s]:* (expression|parexpression) [\s]:* ")" [\s]:* {%([_, _a, _b, d, _c, _d, _e]) => d[0]%}
+    | expression {%id%}
+
+expression -> [\s]:* (compareExp|boolean) [\s]:* {%
+    ([_a, d, _b]) => ({fn: (obj, variables) => d[0].fn(obj, variables)})
 %}
 
 command -> 
-    keyoperand [\s]:* "--" [a-zA-Z]:+ [\s]:* (math|templatestring) {%
+    keyoperand [\s]:* "--" [a-zA-Z]:+ [\s]:* (mathexp|templatestring) {%
         ([key, _a, _b, com, _c, value]) => {
             return {
                 fn: (obj, variables) => ({result: value[0].fn(obj, variables)}),
@@ -43,34 +80,9 @@ command ->
     %}
     | "," [\s]:* command {%([_a, _b, com]) => com%}
 
-
-logicExp -> # may need to remove logicExp from the operand conditions - we'll see if it works
-    (keyExp|logicExp|compareExp|boolean) [\s]:* "&" [\s]:* (keyExp|logicExp|compareExp|boolean) {%
-        ([leftOperand, _a, _b, _c, rightOperand]) => ({
-                fn: (obj, variables) => {
-                    const left = typeof leftOperand === 'string' ? JSON.parse(leftOperand) : left.fn(obj, variables).result;
-                    const right = typeof rightOperand === 'string' ? JSON.parse(rightOperand) : right.fn(obj, variables).result;
-                    return {
-                        result: left && right,
-                        variables
-                    }
-                }
-        })
-    %}
-    |  (keyExp|logicExp|compareExp|boolean) [\s]:* "|" [\s]:* (keyExp|logicExp|compareExp|boolean) {%
-        ([leftOperand, _a, _b, _c, rightOperand]) => ({
-                fn: (obj, variables) => {
-                    const left = typeof leftOperand === 'string' ? JSON.parse(leftOperand) : left.fn(obj, variables);
-                    const right = typeof rightOperand === 'string' ? JSON.parse(rightOperand) : right.fn(obj, variables);
-                    return {
-                        result: left || right
-                    }
-                }
-        })
-    %}
 keyExp -> 
-    key [\s]:* matchstring {%
-    ([key, _a, matchStr]) => {
+    key [\s]:* matchstring [\s]:* {%
+    ([key, _a, matchStr, _b]) => {
         const regex = new RegExp(matchStr.result, 'i')
         return {
             leftOperand: {key: 'key', value: key},
@@ -100,8 +112,7 @@ keyExp ->
         }
     }
     %}
-key -> [a-zA-Z]:+ {%([d]) => d.join("")%}
-    | key [0-9]:+ {%([str, int]) => str + int.join("")%}
+key -> [a-zA-Z0-9]:+ {%([d]) => d.join("")%}
 
 boolean -> "true"{%id%}|"false"{%id%}
 compareExp ->

@@ -1,8 +1,12 @@
 @builtin "number.ne"
 
-math -> sum {%
+mathexp -> [\s]:* "(" [\s]:* (math|mathexp) [\s]:* ")" [\s]:* {%([_, _a, _b, d, _c, _d, _e]) => d[0]%}
+    | math {%id%}
+
+math -> parsum {%
     ([sum]) => ({fn: (obj, variables) => ({result: sum.fn(obj, variables).result})})
 %}
+
 sum -> 
     sum [\s]:* "+" [\s]:* product {%
         ([sum, _a, _b, _c, product]) => ({fn: (obj, variables) => ({result: sum.fn(obj, variables).result + product.fn(obj, variables).result})})

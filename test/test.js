@@ -2,7 +2,11 @@ const nearley = require("nearley");
 const grammar = require("../src/lang/grammar");
 const {est3Array} = require("./test-data");
 
-const rules = ["message2 'FL <floor{1,2}>*' model 'SD' <floor> = 5 : floor --set <floor> + 1, test --set 'true';"]
+const rules =   [`message2 'FL <floor{1,2}>*' model 'SD' <floor> = 5 : floor --set <floor> + 1, 
+                                                                    test --set 'true';`,
+                `message2 'FL <floor{1,2}>*' model '<model{1,2}>' (<model> = 'SD' | <model> = 'PS') & <floor> = 1 : floor --set <floor> + (2 * 5),
+                                                                                                                    test2 --set 'true';                                                    
+            `]
 
 const commands = 
     {
@@ -25,17 +29,16 @@ const main = () => {
             parser.feed(rule);
             const res = parser.results.length ? parser.results[0] : null;
             let output = null;
-            res.input.forEach(input => {
-                //console.log(input);
-                const {result, variables} = input.fn(obj);
-                console.log(variables);
-                if(!result) {
-                    satisfied = false;
-                } else {
-                    vars = {...vars, ...variables};
-                    output = res.output
-                }
-            })
+            const {input} = res;
+            //console.log(input);
+            const {result, variables} = input.fn(obj);
+            console.log(variables);
+            if(!result) {
+                satisfied = false;
+            } else {
+                vars = {...vars, ...variables};
+                output = res.output
+            }
             if(satisfied && Array.isArray(output)) {
                 //console.log(vars)
                 output.forEach(out => {

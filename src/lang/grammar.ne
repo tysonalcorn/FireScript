@@ -3,7 +3,7 @@
 @include "./primitives/operators.ne"
 
 # label 'FL_<floor{2}>' : floor --set '<floor>';
-Rule -> Input:+ [\s]:* ":" [\s]:* command:+ ";" {%
+Rule -> Input [\s]:* ":" [\s]:* command:+ ";" {%
     ([input, _b, _c, _d, output, _e]) => ({
         input,
         output
@@ -11,13 +11,14 @@ Rule -> Input:+ [\s]:* ":" [\s]:* command:+ ";" {%
 %}
 
 Input -> 
-    (keyExp [\s]:*):+ expression:* {%
+    keyExp:+ parlogic:+ {%
         ([keyExps, exps]) => ({
             fn: (obj) => {
                 let vars = {};
                 let match = true;
+                console.log(exps)
                 keyExps.forEach(exp => {
-                    const {variables, result} = exp[0].fn(obj);
+                    const {variables, result} = exp.fn(obj);
                     if(!JSON.parse(result)) match = false;
                     if(variables) {
                         vars = {...vars, ...variables}
