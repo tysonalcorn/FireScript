@@ -64,6 +64,7 @@ expression -> [\s]:* (compareExp|boolean) [\s]:* {%
 command -> 
     keyoperand [\s]:* "--" [a-zA-Z]:+ [\s]:* (mathexp|templatestring) {%
         ([key, _a, _b, com, _c, value]) => {
+            console.log('math or template: ', value);
             return {
                 fn: (obj, variables) => ({result: value[0].fn(obj, variables)}),
                 key: key.value,

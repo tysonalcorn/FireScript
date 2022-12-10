@@ -135,7 +135,6 @@ var grammar = {
     {"name": "mathexp$ebnf$2", "symbols": []},
     {"name": "mathexp$ebnf$2", "symbols": ["mathexp$ebnf$2", /[\s]/], "postprocess": function arrpush(d) {return d[0].concat([d[1]]);}},
     {"name": "mathexp$subexpression$1", "symbols": ["math"]},
-    {"name": "mathexp$subexpression$1", "symbols": ["mathexp"]},
     {"name": "mathexp$ebnf$3", "symbols": []},
     {"name": "mathexp$ebnf$3", "symbols": ["mathexp$ebnf$3", /[\s]/], "postprocess": function arrpush(d) {return d[0].concat([d[1]]);}},
     {"name": "mathexp$ebnf$4", "symbols": []},
@@ -155,17 +154,22 @@ var grammar = {
     {"name": "sum$ebnf$1", "symbols": ["sum$ebnf$1", /[\s]/], "postprocess": function arrpush(d) {return d[0].concat([d[1]]);}},
     {"name": "sum$ebnf$2", "symbols": []},
     {"name": "sum$ebnf$2", "symbols": ["sum$ebnf$2", /[\s]/], "postprocess": function arrpush(d) {return d[0].concat([d[1]]);}},
-    {"name": "sum", "symbols": ["sum", "sum$ebnf$1", {"literal":"+"}, "sum$ebnf$2", "product"], "postprocess": 
-        ([sum, _a, _b, _c, product]) => ({fn: (obj, variables) => ({result: sum.fn(obj, variables).result + product.fn(obj, variables).result})})
+    {"name": "sum$subexpression$1", "symbols": ["product"]},
+    {"name": "sum$subexpression$1", "symbols": ["parsum"]},
+    {"name": "sum", "symbols": ["sum", "sum$ebnf$1", {"literal":"+"}, "sum$ebnf$2", "sum$subexpression$1"], "postprocess": 
+        ([sum, _a, _b, _c, product]) => ({fn: (obj, variables) => ({result: sum.fn(obj, variables).result + product[0].fn(obj, variables).result})})
             },
     {"name": "sum$ebnf$3", "symbols": []},
     {"name": "sum$ebnf$3", "symbols": ["sum$ebnf$3", /[\s]/], "postprocess": function arrpush(d) {return d[0].concat([d[1]]);}},
     {"name": "sum$ebnf$4", "symbols": []},
     {"name": "sum$ebnf$4", "symbols": ["sum$ebnf$4", /[\s]/], "postprocess": function arrpush(d) {return d[0].concat([d[1]]);}},
-    {"name": "sum", "symbols": ["sum", "sum$ebnf$3", {"literal":"-"}, "sum$ebnf$4", "product"], "postprocess": 
-        ([sum, _a, _b, _c, product]) => ({fn: (obj, variables) => ({result: sum.fn(obj, variables).result - product.fn(obj, variables).result})})
+    {"name": "sum$subexpression$2", "symbols": ["product"]},
+    {"name": "sum$subexpression$2", "symbols": ["parsum"]},
+    {"name": "sum", "symbols": ["sum", "sum$ebnf$3", {"literal":"-"}, "sum$ebnf$4", "sum$subexpression$2"], "postprocess": 
+        ([sum, _a, _b, _c, product]) => ({fn: (obj, variables) => ({result: sum.fn(obj, variables).result - product[0].fn(obj, variables).result})})
             },
-    {"name": "sum", "symbols": ["product"], "postprocess": ([product]) => ({fn: (obj, variables) => ({result: product.fn(obj, variables).result})})},
+    {"name": "sum$subexpression$3", "symbols": ["product"]},
+    {"name": "sum", "symbols": ["sum$subexpression$3"], "postprocess": ([product]) => ({fn: (obj, variables) => ({result: product[0].fn(obj, variables).result})})},
     {"name": "product$ebnf$1", "symbols": []},
     {"name": "product$ebnf$1", "symbols": ["product$ebnf$1", /[\s]/], "postprocess": function arrpush(d) {return d[0].concat([d[1]]);}},
     {"name": "product$ebnf$2", "symbols": []},
@@ -203,7 +207,6 @@ var grammar = {
     {"name": "exp", "symbols": ["exp$subexpression$2"], "postprocess": 
         ([operand, _a, exp], reject) => ({
             fn: (obj, variables) => {
-                
                 if(operand[0].type === 'variable' && !Number.isInteger(parseInt(variables[operand[0].value]))) {
                     reject(`variable ${operand[0].value} is not a number`)
                 } else return {
@@ -350,6 +353,7 @@ var grammar = {
     {"name": "command$subexpression$1", "symbols": ["templatestring"]},
     {"name": "command", "symbols": ["keyoperand", "command$ebnf$1", "command$string$1", "command$ebnf$2", "command$ebnf$3", "command$subexpression$1"], "postprocess": 
         ([key, _a, _b, com, _c, value]) => {
+            console.log('math or template: ', value);
             return {
                 fn: (obj, variables) => ({result: value[0].fn(obj, variables)}),
                 key: key.value,

@@ -29,6 +29,7 @@ const main = () => {
             parser.feed(rule);
             const res = parser.results.length ? parser.results[0] : null;
             let output = null;
+            console.log(parser.results, rule)
             const {input} = res;
             //console.log(input);
             const {result, variables} = input.fn(obj);
